@@ -19,11 +19,11 @@ import qualified Database.Beam                  as Beam
 --    two same-priced orders of the same kind (buy/sell).
 data OrderT f
     = Order
-    { _orderBook    :: PrimaryKey BookT f
+    { orderBook    :: PrimaryKey BookT f
       -- | Is it a buy order? (if not, it's a sell order)
-    , _orderIsBuy   :: C f Bool
-    , _orderQty     :: C f Double
-    , _orderPrice   :: C f Double
+    , orderIsBuy   :: C f Bool
+    , orderQty     :: C f Double
+    , orderPrice   :: C f Double
     } deriving Generic
 
 type Order = OrderT Identity
@@ -42,6 +42,6 @@ instance Beam.Table OrderT where
         (C f Bool)
         (C f Double)
             deriving Generic
-    primaryKey Order{..} = OrderId _orderBook _orderIsBuy _orderPrice
+    primaryKey Order{..} = OrderId orderBook orderIsBuy orderPrice
 
 instance Beam.Beamable (PrimaryKey OrderT)

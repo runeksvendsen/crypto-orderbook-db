@@ -19,13 +19,13 @@ storeBook = undefined
 -- storeBook :: Book.LocalTime -> Pg Book.BookId
 -- storeBook time = fmap (Beam.pk . getSingleResult) $
 --     runInsertReturningList $
---         Beam.insert (DB._books DB.orderBookDb) $
+--         Beam.insert (DB.books DB.orderBookDb) $
 --             Beam.insertExpressions [ book ]
 --   where
 --     book = Book
---         { _bookId       = Beam.default_
---         , _bookTime     = _bookTime
---         , _bookVenue    = _bookVenue
---         , _bookBase     = _bookBase
---         , _bookQuote    = _bookQuote
+--         { bookId       = Beam.default_
+--         , bookTime     = bookTime
+--         , bookVenue    = bookVenue
+--         , bookBase     = bookBase
+--         , bookQuote    = bookQuote
 --         }

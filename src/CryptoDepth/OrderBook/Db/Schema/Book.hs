@@ -23,11 +23,11 @@ import Data.Word                            (Word32)
 --   Therefore, merge same-priced orders into one before inserting.
 data BookT f
     = Book
-    { _bookId       :: C f (SqlSerial Word32)
-    , _bookTime     :: C f LocalTime
-    , _bookVenue    :: C f Text
-    , _bookBase     :: C f Text
-    , _bookQuote    :: C f Text
+    { bookId       :: C f (SqlSerial Word32)
+    , bookTime     :: C f LocalTime
+    , bookVenue    :: C f Text
+    , bookBase     :: C f Text
+    , bookQuote    :: C f Text
     } deriving Generic
 
 type Book = BookT Identity
@@ -44,6 +44,6 @@ instance Beam.Table BookT where
     data PrimaryKey BookT f = BookId
         (C f (SqlSerial Word32))
             deriving Generic
-    primaryKey = BookId . _bookId
+    primaryKey = BookId . bookId
 
 instance Beam.Beamable (PrimaryKey BookT)

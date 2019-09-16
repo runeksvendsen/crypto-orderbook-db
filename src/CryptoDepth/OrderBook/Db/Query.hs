@@ -7,7 +7,7 @@ module CryptoDepth.OrderBook.Db.Query
 where
 
 import qualified CryptoDepth.OrderBook.Db.Schema.Order  as Order
-import qualified CryptoDepth.OrderBook.Db               as DB
+import qualified CryptoDepth.OrderBook.Db.Database               as DB
 
 import Database.Beam.Query
 

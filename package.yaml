@@ -19,6 +19,7 @@ default-extensions:
 - DeriveGeneric
 - MultiParamTypeClasses
 - FlexibleContexts
+- ScopedTypeVariables
 
 dependencies:
   - base
@@ -32,15 +33,36 @@ library:
   - CryptoDepth.OrderBook.Db.Internal.Prelude
   - CryptoDepth.OrderBook.Db.Internal.Util
   dependencies:
+  - protolude
   - text
   - time
   - orderbook
+  - safe-money
   - beam-core
   - beam-migrate
   - beam-postgres
-
+  - vector
+  - postgresql-transactional
+  - postgresql-simple
+  - transformers
+  - logging
 
 executables:
   crypto-orderbook-db:
     source-dirs:      app
     main:             Main.hs
+    dependencies:
+    - protolude
+    - crypto-orderbook-db
+    - orderbook
+    - beam-postgres
+    - optparse-applicative
+    - postgresql-transactional
+    - crypto-venues
+    - monad-parallel
+    - errors
+    - logging
+    - http-client
+    - http-client-tls
+    - text
+    - bytestring

@@ -2,17 +2,20 @@ module CryptoDepth.OrderBook.Db.Schema.Book
 ( BookT(..)
 , Book
 , BookId
-, PrimaryKey(type BookId)
+, PrimaryKey(type BookId, type RunId)
   -- * Re-exports
 , LocalTime
+, UTCTime
 , Word32
 )
 where
 
 import CryptoDepth.OrderBook.Db.Internal.Prelude
+import CryptoDepth.OrderBook.Db.Schema.Run          as Run
 
 import qualified Database.Beam              as Beam
 import           Database.Beam              (C, Identity, PrimaryKey)
+import Data.Time.Clock                      (UTCTime)
 import Data.Time.LocalTime                  (LocalTime)
 import Database.Beam.Backend.SQL.Types      (SqlSerial)
 import Data.Word                            (Word32)
@@ -24,7 +27,8 @@ import Data.Word                            (Word32)
 data BookT f
     = Book
     { bookId       :: C f (SqlSerial Word32)
-    , bookTime     :: C f LocalTime
+    , bookRun      :: PrimaryKey Run.RunT f
+    , bookTime     :: C f UTCTime
     , bookVenue    :: C f Text
     , bookBase     :: C f Text
     , bookQuote    :: C f Text

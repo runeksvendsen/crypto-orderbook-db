@@ -24,3 +24,18 @@ packages:
 extra-deps:
 - git: https://github.com/runeksvendsen/orderbook.git
   commit: 1cfe64aeb59ddebcfb0b8353f82457d16766fa36
+- git: https://github.com/runeksvendsen/crypto-venues.git
+  commit: 97e147cdf6794cc43059935a697f76dd59bbcfab
+- logging-3.0.5@sha256:88096d3124fce9a19af3720f751e1a354d866ed5030d2e5197238d2277cdb2f2
+- rate-limit-1.4.1@sha256:27abe882e8b7851202cac124ea2b631e77ab7216f7a655b0782704838fe3c305
+- time-units-1.0.0@sha256:27cf54091c4a0ca73d504fc11d5c31ab4041d17404fe3499945e2055697746c1
+
+
+### BEGIN: crypto-venues
+# - json-schema-0.7.4.2@sha256:6f1c54247006f9d55a9d656a9e83af4b06cf6b49cebdfa79aec092f21181955f
+# - logging-3.0.5@sha256:88096d3124fce9a19af3720f751e1a354d866ed5030d2e5197238d2277cdb2f2
+# - rate-limit-1.4.1@sha256:27abe882e8b7851202cac124ea2b631e77ab7216f7a655b0782704838fe3c305
+# - time-units-1.0.0@sha256:27cf54091c4a0ca73d504fc11d5c31ab4041d17404fe3499945e2055697746c1
+# - containers-0.5.11.0@sha256:28ad7337057442f75bc689315ab4ec7bdf5e6b2c39668f306672cecd82c02798
+# - generic-aeson-0.2.0.10@sha256:9d151244afd715c4ad6ce7d3f24fb04e0110f32a825b0838e34cd96523f94622
+### END: crypto-venues

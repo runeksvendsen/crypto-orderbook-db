@@ -66,3 +66,21 @@ executables:
     - http-client-tls
     - text
     - bytestring
+  crypto-orderbook-db-create-tables:
+    source-dirs:      app
+    main:             CreateTable.hs
+    dependencies:
+    # - protolude
+    - crypto-orderbook-db
+    # - orderbook
+    - beam-postgres
+    - optparse-applicative
+    # - postgresql-transactional
+    # - crypto-venues
+    # - monad-parallel
+    # - errors
+    # - logging
+    # - http-client
+    # - http-client-tls
+    # - text
+    - bytestring

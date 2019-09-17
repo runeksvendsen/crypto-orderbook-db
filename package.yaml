@@ -67,6 +67,7 @@ executables:
     - http-client-tls
     - text
     - bytestring
+    - time
   crypto-orderbook-db-create-tables:
     source-dirs:      exe/create-tables
     main:             Main.hs

@@ -9,8 +9,7 @@ import qualified CryptoDepth.OrderBook.Db.Run.CreateTable   as CT
 
 import           Data.List                                  ((\\))
 
-import           Database.Beam.Migrate.Simple
-import           Database.Beam.Migrate.Types                (collectChecks)
+import qualified Database.Beam.Migrate.Simple               as Migrate
 import qualified Database.Beam.Postgres                     as Pg
 import qualified Database.Beam.Postgres.Migrate             as Pg
 import qualified Text.Pretty.Simple                         as Pretty
@@ -20,7 +19,7 @@ import qualified Text.Pretty.Simple                         as Pretty
 assertSchema :: Pg.Connection -> IO ()
 assertSchema conn = do
     actualDbState   <- Pg.getDbConstraints conn
-    expectedDbState <- collectChecks <$> mkCheckedDb CT.dbCreate
+    expectedDbState <- Migrate.collectChecks <$> mkCheckedDb CT.dbCreate
     unless (all (`elem` actualDbState) expectedDbState) $ do
         putStrLn "Missing:"
         Pretty.pPrint $ expectedDbState \\ actualDbState
@@ -31,4 +30,4 @@ assertSchema conn = do
         error "Unsupported DB schema. See details above."
   where
     mkCheckedDb migration =
-        runMigrationSteps 0 Nothing migration (\_ _ step -> pure (runMigrationSilenced step))
+        Migrate.runMigrationSteps 0 Nothing migration (\_ _ step -> pure (Migrate.runMigrationSilenced step))

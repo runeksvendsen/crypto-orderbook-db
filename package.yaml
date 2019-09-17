@@ -11,24 +11,15 @@ category:            value
 extra-source-files:
 - README.md
 
-default-extensions:
-- StandaloneDeriving
-- RecordWildCards
-- TypeFamilies
-- FlexibleInstances
-- DeriveGeneric
-- MultiParamTypeClasses
-- FlexibleContexts
-- ScopedTypeVariables
-
 dependencies:
   - base
 
-library:
-  source-dirs: src
-  ghc-options:
+ghc-options:
   - -Wall
   - -fno-warn-name-shadowing
+
+library:
+  source-dirs: src
   other-modules:
   - CryptoDepth.OrderBook.Db.Internal.Prelude
   - CryptoDepth.OrderBook.Db.Internal.Util
@@ -46,10 +37,20 @@ library:
   - postgresql-simple
   - transformers
   - logging
+  - pretty-simple
+  default-extensions:
+  - StandaloneDeriving
+  - RecordWildCards
+  - TypeFamilies
+  - FlexibleInstances
+  - DeriveGeneric
+  - MultiParamTypeClasses
+  - FlexibleContexts
+  - ScopedTypeVariables
 
 executables:
   crypto-orderbook-db:
-    source-dirs:      app
+    source-dirs:      exe/app
     main:             Main.hs
     dependencies:
     - protolude
@@ -67,20 +68,12 @@ executables:
     - text
     - bytestring
   crypto-orderbook-db-create-tables:
-    source-dirs:      app
-    main:             CreateTable.hs
+    source-dirs:      exe/create-tables
+    main:             Main.hs
     dependencies:
-    # - protolude
     - crypto-orderbook-db
-    # - orderbook
     - beam-postgres
+    - beam-migrate
     - optparse-applicative
-    # - postgresql-transactional
-    # - crypto-venues
-    # - monad-parallel
-    # - errors
-    # - logging
-    # - http-client
-    # - http-client-tls
-    # - text
     - bytestring
+    - logging

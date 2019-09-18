@@ -22,7 +22,6 @@ import qualified Data.Vector                                as Vec
 import Database.Beam.Backend.SQL.BeamExtensions             (runInsertReturningList)
 import Database.Beam.Postgres                               (Pg)
 import qualified Money
-import qualified Database.PostgreSQL.Transaction            as PgTx
 
 
 data SomeOrderBook = forall venue base quote.
@@ -31,14 +30,14 @@ data SomeOrderBook = forall venue base quote.
    , KnownSymbol quote
    ) => SomeOrderBook (OB.OrderBook venue base quote)
 
--- |
+-- | Store an entire run as a transaction
 storeRun
     :: Book.UTCTime                         -- ^ Run start time
     -> Book.UTCTime                         -- ^ Run end time
     -> [(Book.UTCTime, SomeOrderBook)]      -- ^ Books & fetch times
     -> M.Db (Run.RunId, [Book.BookId])
-storeRun startTime endTime books = do
-    runId <- M.liftPg $ insertRunReturningId $ Beam.insertExpressions
+storeRun startTime endTime books = (M.runTx <=< M.asTx) $ do
+    runId <- insertRunReturningId $ Beam.insertExpressions
         [ Run.Run
             { runId         = Beam.default_
             , runTimeStart  = Beam.val_ startTime
@@ -48,26 +47,13 @@ storeRun startTime endTime books = do
     bookIdList <- forM books $ \(time, SomeOrderBook book) -> do
         -- NB: merging same-priced orders is important since the order primary key depends
         --  on two same-priced orders not existing in the same order book
-        tx <- storeBookTx runId time (Util.mergeSamePricedOrders book)
-        M.runTx tx
+        storeBookPg runId time (Util.mergeSamePricedOrders book)
     return (runId, bookIdList)
   where
     insertRunReturningId =
         fmap (Beam.pk . getSingleResult "storeRun")
         . runInsertReturningList
         . Beam.insert (DB.runs DB.orderBookDb)
-
--- | Insert orderbook (including orders) as a transaction.
---   Returns the assigned order book ID.
-storeBookTx
-    :: forall venue base quote.
-       (KnownSymbol venue, KnownSymbol base, KnownSymbol quote)
-    => Run.RunId
-    -> Book.UTCTime
-    -> OB.OrderBook venue base quote
-    -> M.Db (PgTx.PGTransaction Book.BookId)
-storeBookTx runId time =
-    M.asTx . storeBookPg runId time
 
 storeBookPg
     :: forall venue base quote.

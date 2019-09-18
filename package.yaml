@@ -18,6 +18,9 @@ ghc-options:
   - -Wall
   - -fno-warn-name-shadowing
 
+default-extensions:
+  - TypeFamilies
+
 library:
   source-dirs: src
   other-modules:
@@ -41,7 +44,6 @@ library:
   default-extensions:
   - StandaloneDeriving
   - RecordWildCards
-  - TypeFamilies
   - FlexibleInstances
   - DeriveGeneric
   - MultiParamTypeClasses

@@ -38,11 +38,11 @@ main :: IO ()
 main = Options.withArgs $ \args -> do
     conn <- Postgres.connectPostgreSQL (Options.dbConnString args)
     Assert.assertSchema conn
-    -- Begin fetching order books for run
-    runStartTime <- Clock.getCurrentTime
-    timeBookList <- fetchBooks (Options.fetchMaxRetries args)
-    runEndTime <- Clock.getCurrentTime
-    -- Insert fetched order books
+    bookFetchRun <- fetchRun (Options.fetchMaxRetries args)
+    storeBooks conn bookFetchRun
+
+storeBooks :: Postgres.Connection -> BookRun -> IO ()
+storeBooks conn BookRun{..} = do
     (runId, bookIdList) <- Db.runDb conn $
         Insert.storeRun runStartTime runEndTime timeBookList
     logInfoS (toS $ "Run " ++ show runId)
@@ -51,14 +51,24 @@ main = Options.withArgs $ \args -> do
     logInfoS :: T.Text -> T.Text -> IO ()
     logInfoS = Log.loggingLogger Log.LevelInfo
 
+fetchRun :: Word -> IO BookRun
+fetchRun maxRetries = do
+    runStartTime <- Clock.getCurrentTime
+    timeBookList <- fetchBooks maxRetries
+    runEndTime <- Clock.getCurrentTime
+    return $ BookRun runStartTime timeBookList runEndTime
+
+data BookRun = BookRun
+    { runStartTime  :: Clock.UTCTime
+    , timeBookList  :: [(Clock.UTCTime, SomeOrderBook)]
+    , runEndTime    :: Clock.UTCTime
+    }
+
 fetchBooks :: Word -> IO [(Clock.UTCTime, SomeOrderBook)]
 fetchBooks maxRetries = do
     man <- HTTP.newManager HTTPS.tlsManagerSettings
-    booksE <-
-        throwErrM $
-        withLogging $
-        AppM.runAppM man maxRetries $
-        allBooks
+    booksE <- throwErrM $ withLogging $
+        AppM.runAppM man maxRetries $ allBooks
     -- Log errors
     forM_ (lefts booksE) logFetchError
     return . concat . rights $ booksE

@@ -88,7 +88,7 @@ withLogging ioa = Log.withStderrLogging $ do
   where
     -- TODO: don't hardcode
     logLevel :: Log.LogLevel
-    logLevel = Log.LevelDebug
+    logLevel = Log.LevelInfo
 
 -- | Fetch books, in parallel, from all venues.
 --

@@ -6,7 +6,6 @@ import           Prelude
 import qualified Options
 import           Protolude.Conv                         (toS)
 import qualified OrderBook.Types                        as OB
-import qualified CryptoDepth.OrderBook.Db.Run.Assert    as Assert
 import qualified CryptoDepth.OrderBook.Db.Insert        as Insert
 import           CryptoDepth.OrderBook.Db.Insert        (SomeOrderBook)
 import qualified CryptoDepth.OrderBook.Db.Monad         as Db
@@ -37,7 +36,6 @@ import           Control.Monad.IO.Class                 (liftIO)
 main :: IO ()
 main = Options.withArgs $ \args -> do
     conn <- Postgres.connectPostgreSQL (Options.dbConnString args)
-    Assert.assertSchema conn
     bookFetchRun <- fetchRun (Options.fetchMaxRetries args)
     storeBooks conn bookFetchRun
 

@@ -70,6 +70,8 @@ executables:
     - text
     - bytestring
     - time
+    default-extensions:
+    - RecordWildCards
   crypto-orderbook-db-create-tables:
     source-dirs:      exe/create-tables
     main:             Main.hs

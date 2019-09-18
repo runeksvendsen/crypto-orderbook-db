@@ -14,7 +14,7 @@ import CryptoDepth.OrderBook.Db.Internal.Prelude
 import qualified Database.Beam              as Beam
 import           Database.Beam              (C, Identity, PrimaryKey)
 import Data.Time.Clock                      (UTCTime)
-import Database.Beam.Backend.SQL.Types      (SqlSerial)
+import Database.Beam.Backend.SQL.Types      (SqlSerial(unSerial))
 import Data.Word                            (Word32)
 
 
@@ -32,7 +32,8 @@ type RunId = PrimaryKey RunT Identity
 
 deriving instance Show Run
 deriving instance Eq Run
-deriving instance Show RunId
+instance Show RunId where
+    show (RunId serial) = "RunId " ++ show (unSerial serial)
 deriving instance Eq RunId
 
 instance Beam.Beamable RunT

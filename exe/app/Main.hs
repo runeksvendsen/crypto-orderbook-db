@@ -45,7 +45,7 @@ storeBooks :: Postgres.Connection -> BookRun -> IO ()
 storeBooks conn BookRun{..} = do
     (runId, bookIdList) <- Db.runDb conn $
         Insert.storeRun runStartTime runEndTime timeBookList
-    logInfoS (toS $ "Run " ++ show runId)
+    logInfoS (toS $ show runId)
              (toS $ "Inserted " ++ show (length bookIdList) ++ " books")
   where
     logInfoS :: T.Text -> T.Text -> IO ()

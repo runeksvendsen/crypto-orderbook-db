@@ -43,6 +43,7 @@ mergeSamePrice =
 --   Invariants:
 --      "combine (const $ const Nothing) = id"
 --      "combine (const $ const $ Just value) _ = [value]"
+--      "combine f >>> groupBy (f >>> isJust) >>> all (length >>> (== 1)) = const True"
 combine
     :: (a -> a -> Maybe a)
     -- ^ If the two adjacent list items can be combined,

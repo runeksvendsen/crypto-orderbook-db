@@ -53,7 +53,10 @@ connectFetchStore args = do
     logInfoS "DB" ("Connecting to " ++ show dbConnString)
     conn <- Postgres.connectPostgreSQL dbConnString
     bookFetchRun <- fetchRun (Options.fetchMaxRetries args)
-    storeBooks conn bookFetchRun
+    -- Don't store empty run
+    if length (timeBookList bookFetchRun) > 0
+        then storeBooks conn bookFetchRun
+        else logInfoS "MAIN" "Not inserting empty run"
     Postgres.close conn
   where
     dbConnString = Options.dbConnString args
@@ -81,6 +84,7 @@ data BookRun = BookRun
     , runEndTime    :: Clock.UTCTime
     }
 
+-- TODO: error handling when running "EnumMarkets.marketList"
 fetchBooks :: Word -> IO [(Clock.UTCTime, SomeOrderBook)]
 fetchBooks maxRetries = do
     man <- HTTP.newManager HTTPS.tlsManagerSettings

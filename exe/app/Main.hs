@@ -1,9 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main
 ( main
 ) where
 
 import           Prelude
 import qualified Options
+import qualified Runner
 import           Protolude.Conv                         (toS)
 import qualified OrderBook.Types                        as OB
 import qualified CryptoDepth.OrderBook.Db.Insert        as Insert
@@ -33,21 +35,38 @@ import           Control.Monad                          (forM, forM_)
 import           Control.Monad.IO.Class                 (liftIO)
 
 
-main :: IO ()
-main = Options.withArgs $ \args -> do
-    conn <- Postgres.connectPostgreSQL (Options.dbConnString args)
+main :: IO Runner.Void
+main = Options.withArgs $ \args ->
+    withLogging $
+        -- Keep doing the below with a random pause in-between (in specified range)
+        Runner.foreverWithPauseRange (10 :: Runner.Minute) (30 :: Runner.Minute) $
+            -- Catch all exceptions and log them as an error
+            Runner.logSwallowExceptions $
+                connectFetchStore args
+
+-- | Open database connection,
+--   fetch orderbooks,
+--   write orderbooks to database,
+--   close database connection.
+connectFetchStore :: Options.Options -> IO ()
+connectFetchStore args = do
+    logInfoS "DB" ("Connecting to " ++ show dbConnString)
+    conn <- Postgres.connectPostgreSQL dbConnString
     bookFetchRun <- fetchRun (Options.fetchMaxRetries args)
     storeBooks conn bookFetchRun
+    Postgres.close conn
+  where
+    dbConnString = Options.dbConnString args
 
 storeBooks :: Postgres.Connection -> BookRun -> IO ()
 storeBooks conn BookRun{..} = do
     (runId, bookIdList) <- Db.runDb conn $
         Insert.storeRun runStartTime runEndTime timeBookList
     logInfoS (toS $ show runId)
-             (toS $ "Inserted " ++ show (length bookIdList) ++ " books")
-  where
-    logInfoS :: T.Text -> T.Text -> IO ()
-    logInfoS = Log.loggingLogger Log.LevelInfo
+             ("Inserted " ++ show (length bookIdList) ++ " books")
+
+logInfoS :: T.Text -> String -> IO ()
+logInfoS = Log.loggingLogger Log.LevelInfo
 
 fetchRun :: Word -> IO BookRun
 fetchRun maxRetries = do
@@ -65,7 +84,7 @@ data BookRun = BookRun
 fetchBooks :: Word -> IO [(Clock.UTCTime, SomeOrderBook)]
 fetchBooks maxRetries = do
     man <- HTTP.newManager HTTPS.tlsManagerSettings
-    booksE <- throwErrM $ withLogging $
+    booksE <- throwErrM $
         AppM.runAppM man maxRetries $ allBooks
     -- Log errors
     forM_ (lefts booksE) logFetchError

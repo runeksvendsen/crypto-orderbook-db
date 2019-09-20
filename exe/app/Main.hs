@@ -14,7 +14,7 @@ import qualified CryptoDepth.OrderBook.Db.Monad         as Db
 
 -- CryptoVenues
 import qualified CryptoVenues
-import           CryptoVenues.Types.ABook
+import qualified CryptoVenues.Types.ABook               as AB
 import qualified CryptoVenues.Fetch.EnumMarkets         as EnumMarkets
 import qualified CryptoVenues.Venues                    as Venues
 import qualified CryptoVenues.Types.AppM                as AppM
@@ -119,9 +119,9 @@ allBooks
     :: AppM.AppM IO [Either AppM.Error [(Clock.UTCTime, SomeOrderBook)]]
 allBooks = do
     Par.forM Venues.allVenues $ \(CryptoVenues.AnyVenue p) ->
-         AppM.evalAppM (map (fmap $ toSomeOrderBook . toABook) <$> venueBooks p)
+         AppM.evalAppM (map (fmap $ toSomeOrderBook . AB.toABook) <$> venueBooks p)
   where
-    toSomeOrderBook (ABook ob) = Insert.SomeOrderBook ob
+    toSomeOrderBook (AB.ABook ob) = Insert.SomeOrderBook ob
 
 -- | Fetch all books for a given venue
 venueBooks

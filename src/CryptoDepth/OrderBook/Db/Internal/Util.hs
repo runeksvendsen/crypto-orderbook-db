@@ -1,11 +1,14 @@
-{-# LANGUAGE OverloadedLists #-}
 module CryptoDepth.OrderBook.Db.Internal.Util
 ( mergeSamePricedOrders
+, sortByOccurrenceCount
 )
 where
 
 import qualified OrderBook.Types                    as OB
 import           GHC.Exts                           (IsList(..))
+import           Data.List                          (groupBy, sortOn)
+import           Data.Ord                           (Down(Down))
+import qualified Data.Map.Strict                    as Map
 
 
 -- | Merge adjacent, same-priced orders
@@ -59,3 +62,31 @@ combine f =
         case f newestItem item of
             Just combinedA -> combinedA : remainingItems
             Nothing        -> item : accumList
+
+-- | Sort each sublist in a list so that the
+--    most frequently occurring items occur first in each sublist.
+sortByOccurrenceCount
+    :: (Eq b, Ord b, Eq c, Ord c)
+    => (a -> c) -- ^ The initial list is split into sublists on this property.
+                --   Ie. this property is the same for all items within a sublist
+                --    of the initial list, but distinct between items in different
+                --    sublists.
+    -> (a -> b) -- ^ Sort by this property
+    -> [[a]]    -- ^ Initial list
+    -> [[a]]
+sortByOccurrenceCount distinct prop =
+    splitOn distinct .
+    concat .
+    sortOnDesc length .
+    groupBy (\a1 a2 -> prop a1 == prop a2) .
+    sortOn prop .
+    concat
+  where
+    sortOnDesc :: Ord b => (a -> b) -> [a] -> [a]
+    sortOnDesc f = sortOn (Down . f)
+    splitOn prop' = Map.elems . foldr (newListOrCons prop') (Map.empty :: Map.Map c [a])
+    newListOrCons prop' item map =
+        let key = prop' item
+        in maybe (Map.insert key [item] map)
+                 (\list -> Map.insert key (item : list) map)
+                 (Map.lookup key map)

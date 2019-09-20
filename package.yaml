@@ -25,7 +25,6 @@ library:
   source-dirs: src
   other-modules:
   - CryptoDepth.OrderBook.Db.Internal.Prelude
-  - CryptoDepth.OrderBook.Db.Internal.Util
   dependencies:
   - protolude
   - text
@@ -41,6 +40,7 @@ library:
   - transformers
   - logging
   - pretty-simple
+  - containers  # Util
   default-extensions:
   - StandaloneDeriving
   - RecordWildCards
@@ -84,3 +84,19 @@ executables:
     - optparse-applicative
     - bytestring
     - logging
+
+
+tests:
+  crypto-orderbook-db-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - crypto-orderbook-db
+    - hspec
+    - random-shuffle
+    - hspec-expectations
+    - hspec-expectations-pretty-diff

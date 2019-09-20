@@ -9,7 +9,7 @@ module CryptoDepth.OrderBook.Db.Insert
 where
 
 import CryptoDepth.OrderBook.Db.Internal.Prelude
-import qualified CryptoDepth.OrderBook.Db.Internal.Util     as Util
+import qualified CryptoDepth.OrderBook.Db.Util              as Util
 import qualified CryptoDepth.OrderBook.Db.Schema.Run        as Run
 import qualified CryptoDepth.OrderBook.Db.Schema.Book       as Book
 import qualified CryptoDepth.OrderBook.Db.Schema.Order      as Order

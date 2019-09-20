@@ -3,7 +3,7 @@ module Spec.Util
 )
 where
 
-import qualified CryptoDepth.OrderBook.Db.Internal.Util     as Util
+import qualified CryptoDepth.OrderBook.Db.Util              as Util
 
 import qualified Test.Hspec                                 as Hspec
 import qualified Test.Hspec.Expectations                    as Expect

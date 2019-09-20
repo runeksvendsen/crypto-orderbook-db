@@ -1,4 +1,4 @@
-module CryptoDepth.OrderBook.Db.Internal.Util
+module CryptoDepth.OrderBook.Db.Util
 ( mergeSamePricedOrders
 , sortByOccurrenceCount
 )

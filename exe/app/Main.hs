@@ -11,6 +11,7 @@ import qualified OrderBook.Types                        as OB
 import qualified CryptoDepth.OrderBook.Db.Insert        as Insert
 import           CryptoDepth.OrderBook.Db.Insert        (SomeOrderBook)
 import qualified CryptoDepth.OrderBook.Db.Monad         as Db
+import qualified CryptoDepth.OrderBook.Db.Util          as Util
 
 -- CryptoVenues
 import qualified CryptoVenues
@@ -92,8 +93,16 @@ fetchBooks maxRetries = do
         AppM.runAppM man maxRetries $ allBooks
     -- Log errors
     forM_ (lefts booksE) logFetchError
-    return . concat . rights $ booksE
+    -- NB: we sort the books so that the most frequently
+    --  occurring markets are fetched first
+    return . concat . sortMostFrequent . rights $ booksE
   where
+    sortMostFrequent =
+        Util.sortByOccurrenceCount (soVenue . snd) (soBaseQuote . snd)
+    soVenue (Insert.SomeOrderBook ob) =
+        AB.abVenue ob
+    soBaseQuote (Insert.SomeOrderBook ob) =
+        (AB.abBase ob, AB.abQuote ob)
     logErrorS :: T.Text -> T.Text -> IO ()
     logErrorS = Log.loggingLogger Log.LevelError
     throwErrM ioA =

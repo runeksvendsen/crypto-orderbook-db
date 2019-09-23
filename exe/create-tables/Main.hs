@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main
 ( main
 ) where
@@ -16,8 +17,10 @@ main = withLogging $ do
     connString <- Opt.execParser opts
     conn <- Postgres.connectPostgreSQL connString
     checkedDb <- CT.createTables conn
-    putStrLn "Created database:"
-    print $ Migrate.collectChecks checkedDb
+    logInfoS "MAIN" ("Created database" :: String)
+    logInfoS "MAIN" $ show (Migrate.collectChecks checkedDb)
+  where
+    logInfoS = Log.loggingLogger Log.LevelInfo
 
 opts :: Opt.ParserInfo BS.ByteString
 opts =

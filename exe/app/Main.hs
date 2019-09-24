@@ -34,16 +34,35 @@ import           Data.Proxy                             (Proxy(..))
 import           Control.Error                          (lefts, rights)
 import           Control.Monad                          (forM, forM_)
 import           Control.Monad.IO.Class                 (liftIO)
+import           Control.Exception                      (bracket)
 
 
 main :: IO Runner.Void
 main = Options.withArgs $ \args ->
-    withLogging $
+    withLogging $ do
+        -- Test connection on startup.
+        -- Program will crash if a connection cannot be established.
+        testConnection args
         -- Keep doing the below with a random pause in-between (in specified range)
         Runner.foreverWithPauseRange (10 :: Runner.Minute) (30 :: Runner.Minute) $
             -- Catch all exceptions and log them as an error
             Runner.logSwallowExceptions $
                 connectFetchStore args
+  where
+    testConnection args' =
+        withConnection args' (const $ return ())
+
+withConnection
+    :: Options.Options
+    -> (Postgres.Connection -> IO a)
+    -> IO a
+withConnection args =
+    bracket openConn Postgres.close
+  where
+    dbConnString = Options.dbConnString args
+    openConn = do
+        logInfoS "DB" ("Connecting to " ++ show dbConnString)
+        Postgres.connectPostgreSQL dbConnString
 
 -- | Open database connection,
 --   fetch orderbooks,
@@ -51,16 +70,12 @@ main = Options.withArgs $ \args ->
 --   close database connection.
 connectFetchStore :: Options.Options -> IO ()
 connectFetchStore args = do
-    logInfoS "DB" ("Connecting to " ++ show dbConnString)
-    conn <- Postgres.connectPostgreSQL dbConnString
     bookFetchRun <- fetchRun (Options.fetchMaxRetries args)
-    -- Don't store empty run
-    if length (timeBookList bookFetchRun) > 0
-        then storeBooks conn bookFetchRun
-        else logInfoS "MAIN" "Not inserting empty run"
-    Postgres.close conn
-  where
-    dbConnString = Options.dbConnString args
+    withConnection args $ \conn ->
+        -- Don't store empty run
+        if length (timeBookList bookFetchRun) > 0
+            then storeBooks conn bookFetchRun
+            else logInfoS "MAIN" "Not inserting empty run"
 
 storeBooks :: Postgres.Connection -> BookRun -> IO ()
 storeBooks conn BookRun{..} = do

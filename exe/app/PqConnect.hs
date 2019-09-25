@@ -14,7 +14,8 @@ import           Control.Exception                  (IOException)
 import           Data.List                          (isInfixOf)
 
 
--- |
+-- | Retry failed database connection attempts a
+--    maximum number of times
 pgConnectRetry
     :: Word                     -- ^ Max retries
     -> BS.ByteString            -- ^ DB connection string

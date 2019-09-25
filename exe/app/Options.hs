@@ -18,12 +18,14 @@ withArgs f = do
 
 data Options = Options
     { dbConnString      :: BS.ByteString
+    , dbMaxRetries      :: Word
     , fetchMaxRetries   :: Word
     }
 
 options :: Opt.Parser Options
 options = Options
     <$> connString'
+    <*> dbConnRetry'
     <*> fetchMaxRetries'
 
 opts :: Opt.ParserInfo Options
@@ -38,6 +40,12 @@ connString' = strOption $
   <> short 'c'
   <> metavar "CONNSTRING"
   <> help "Database connection string (libpq format)"
+
+dbConnRetry' :: Opt.Parser Word
+dbConnRetry' = option auto $
+     long "db-max-retries"
+  <> metavar "CONN_RETRIES"
+  <> help "Maximum number of times to retry connecting to database"
 
 fetchMaxRetries' :: Opt.Parser Word
 fetchMaxRetries' = option auto $

@@ -6,6 +6,7 @@ module Main
 import           Prelude
 import qualified Options
 import qualified Runner
+import qualified PqConnect
 import           Protolude.Conv                         (toS)
 import qualified OrderBook.Types                        as OB
 import qualified CryptoDepth.OrderBook.Db.Insert        as Insert
@@ -60,9 +61,10 @@ withConnection args =
     bracket openConn Postgres.close
   where
     dbConnString = Options.dbConnString args
+    dbMaxRetries = Options.dbMaxRetries args
     openConn = do
         logInfoS "DB" ("Connecting to " ++ show dbConnString)
-        Postgres.connectPostgreSQL dbConnString
+        PqConnect.pgConnectRetry dbMaxRetries dbConnString
 
 -- | Open database connection,
 --   fetch orderbooks,

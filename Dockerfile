@@ -29,5 +29,5 @@ RUN stack build --test --copy-bins --local-bin-path /tmp/dist/
 FROM ubuntu:16.04 as runtime
 
 RUN apt-get update \
-  && apt-get install -y libpq-dev libgmp10
+  && apt-get install -y ca-certificates libpq-dev libgmp10
 COPY --from=builder /tmp/dist/* /usr/local/bin/

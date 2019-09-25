@@ -24,7 +24,7 @@ runMigration conn migration =
     let executeFunction = (tryExecute conn <=< debugPrintQuery) . newSqlQuery
         tryExecute conn query =
             catch (void $ PgSimple.execute_ conn query)
-            (\err -> putStrLn ("ERROR: " ++ show (err :: PgSimple.SqlError)))
+            (\err -> logErrorS "SQL/EXEC" (toS $ show (err :: PgSimple.SqlError)))
     in runMigrationSteps 0 Nothing migration
           (\_ _ -> executeMigration executeFunction)
 

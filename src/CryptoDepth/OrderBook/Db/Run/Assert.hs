@@ -21,13 +21,12 @@ assertSchema conn = do
     actualDbState   <- Pg.getDbConstraints conn
     expectedDbState <- Migrate.collectChecks <$> mkCheckedDb CT.dbCreate
     unless (all (`elem` actualDbState) expectedDbState) $ do
-        putStrLn "Missing:"
-        Pretty.pPrint $ expectedDbState \\ actualDbState
-        putStrLn "Found:"
-        Pretty.pPrint actualDbState
-        putStrLn "Expected:"
-        Pretty.pPrint expectedDbState
+        logAssertError $
+            "Missing: " <> toS (Pretty.pShow $ expectedDbState \\ actualDbState) <>
+            "\nFound: " <> (toS $ Pretty.pShow actualDbState) <>
+            "\nExpected: " <> (toS $ Pretty.pShow expectedDbState)
         error "Unsupported DB schema. See details above."
   where
+    logAssertError = logErrorS "ASSERT"
     mkCheckedDb migration =
         Migrate.runMigrationSteps 0 Nothing migration (\_ _ step -> pure (Migrate.runMigrationSilenced step))

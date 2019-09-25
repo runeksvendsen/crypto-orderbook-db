@@ -2,7 +2,7 @@ module CryptoDepth.OrderBook.Db.Internal.Prelude
 ( T.Text
 , Word32
 , Generic
--- , logErrorS
+, logErrorS
 , module ProtoString
 , module TypeLits
 , module Proxy
@@ -23,8 +23,8 @@ import Data.Maybe as Maybe
 import Protolude.Safe as Safe
 import Protolude as IO (MonadIO, liftIO)
 import Control.Monad as Monad
--- import qualified Control.Logging                    as Log
+import qualified Control.Logging                    as Log
 
 
--- logErrorS :: T.Text -> T.Text -> IO ()
--- logErrorS = Log.loggingLogger Log.LevelError
+logErrorS :: T.Text -> T.Text -> IO ()
+logErrorS = Log.loggingLogger Log.LevelError

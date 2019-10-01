@@ -13,6 +13,7 @@ import qualified CryptoDepth.OrderBook.Db.Insert        as Insert
 import           CryptoDepth.OrderBook.Db.Insert        (SomeOrderBook)
 import qualified CryptoDepth.OrderBook.Db.Monad         as Db
 import qualified CryptoDepth.OrderBook.Db.Util          as Util
+import qualified RetrySimple                            as RS
 
 -- CryptoVenues
 import qualified CryptoVenues
@@ -33,7 +34,7 @@ import qualified Data.Time.Clock                        as Clock
 
 import           Data.Proxy                             (Proxy(..))
 import           Control.Error                          (lefts, rights)
-import           Control.Monad                          (forM, forM_)
+import           Control.Monad                          (forM, forM_, (<=<))
 import           Control.Monad.IO.Class                 (liftIO)
 import           Control.Exception                      (bracket)
 
@@ -155,8 +156,10 @@ venueBooks
     => Proxy venue
     -> AppM.AppM IO [(Clock.UTCTime, OB.AnyBook venue)]
 venueBooks _ = do
-    allMarkets <- EnumMarkets.marketList
+    allMarkets <- retrying EnumMarkets.marketList
     forM allMarkets $ \market -> do
         book <- fetchMarketBook market
         time <- liftIO Clock.getCurrentTime
         return (time, book)
+  where
+    retrying = id <=< RS.rateLimitRetrySimple (1 :: RS.Second)

@@ -73,6 +73,8 @@ executables:
     - time-units  # Schedule
     - random      # Schedule
     - retry       # PqConnection
+    - rate-limit  # RetrySimple
+    - mtl         # RetrySimple
     default-extensions:
     - RecordWildCards
   crypto-orderbook-db-create-tables:

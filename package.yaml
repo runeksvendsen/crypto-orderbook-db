@@ -75,6 +75,7 @@ executables:
     - retry       # PqConnection
     - rate-limit  # RetrySimple
     - mtl         # RetrySimple
+    - githash
     default-extensions:
     - RecordWildCards
   crypto-orderbook-db-create-tables:

@@ -11,16 +11,16 @@ import           Data.Ord                           (Down(Down))
 import qualified Data.Map.Strict                    as Map
 
 
--- | Merge adjacent, same-priced orders
+-- | Merge same-priced orders
 mergeSamePricedOrders
     :: OB.OrderBook venue base quote
-    -- ^ Contains buy and sell orders sorted by price
+    -- ^ Order book
     -> OB.OrderBook venue base quote
     -- ^ All same-priced buy/sell orders have been merged into one buy/sell order
 mergeSamePricedOrders book =
     OB.OrderBook
-        { obBids = OB.BuySide . asList mergeSamePrice . OB.buySide . OB.obBids $ book
-        , obAsks = OB.SellSide . asList mergeSamePrice . OB.sellSide . OB.obAsks $ book
+        { obBids = OB.BuySide . asList (mergeSamePrice . sortOnDesc OB.oPrice) . OB.buySide . OB.obBids $ book
+        , obAsks = OB.SellSide . asList (mergeSamePrice . sortOn OB.oPrice) . OB.sellSide . OB.obAsks $ book
         }
   where
     asList f = fromList . f . toList
@@ -82,11 +82,13 @@ sortByOccurrenceCount distinct prop =
     sortOn prop .
     concat
   where
-    sortOnDesc :: Ord b => (a -> b) -> [a] -> [a]
-    sortOnDesc f = sortOn (Down . f)
     splitOn prop' = Map.elems . foldr (newListOrCons prop') (Map.empty :: Map.Map c [a])
     newListOrCons prop' item map =
         let key = prop' item
         in maybe (Map.insert key [item] map)
                  (\list -> Map.insert key (item : list) map)
                  (Map.lookup key map)
+
+-- | Sort descending
+sortOnDesc :: Ord b => (a -> b) -> [a] -> [a]
+sortOnDesc f = sortOn (Down . f)

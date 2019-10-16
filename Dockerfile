@@ -23,6 +23,9 @@ COPY exe ./exe
 COPY src ./src
 COPY test ./test
 
+# needed to embed git commit in executable
+COPY .git ./.git
+
 RUN stack build --test --copy-bins --local-bin-path /tmp/dist/
 
 # RUNTIME

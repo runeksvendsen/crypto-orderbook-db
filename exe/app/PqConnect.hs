@@ -32,6 +32,7 @@ pgConnectRetry maxRetries connStr =
     retryStrings =
         [ "server closed the connection unexpectedly"
         , "Connection refused"
+        , "Connection timed out"
         ]
     logRetry :: Bool -> IOException -> RT.RetryStatus -> IO ()
     logRetry retrying err rs = do
@@ -51,4 +52,6 @@ libpq: failed (could not connect to server: Connection refused
 libpq: failed (server closed the connection unexpectedly
     This probably means the server terminated abnormally
     before or while processing the request.
+
+libpq: failed (could not send data to server: Connection timed out
 -}

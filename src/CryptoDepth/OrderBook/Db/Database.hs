@@ -2,6 +2,7 @@ module CryptoDepth.OrderBook.Db.Database
 ( OrderBookDb(..)
 , orderBookDb
 , bookOrders
+, runBooks
 )
 where
 
@@ -27,3 +28,8 @@ bookOrders
     :: Beam.HasSqlEqualityCheck be Book.Word32
     => Beam.OneToMany be OrderBookDb s Book.BookT Order.OrderT
 bookOrders = Beam.oneToMany_ (orders orderBookDb) Order.orderBook
+
+runBooks
+    :: Beam.HasSqlEqualityCheck be Book.Word32
+    => Beam.OneToMany be OrderBookDb s Run.RunT Book.BookT
+runBooks = Beam.oneToMany_ (books orderBookDb) Book.bookRun

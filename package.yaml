@@ -41,6 +41,7 @@ library:
   - logging
   - pretty-simple
   - containers  # Util
+  - pagination
   default-extensions:
   - StandaloneDeriving
   - RecordWildCards

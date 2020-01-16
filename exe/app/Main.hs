@@ -50,7 +50,7 @@ main = Options.withArgs $ \args ->
         -- Program will crash if a connection cannot be established.
         testConnection args
         -- Keep doing the below with a random pause in-between (in specified range)
-        Runner.foreverWithPauseRange (10 :: Runner.Minute) (30 :: Runner.Minute) $
+        Runner.foreverWithPauseRange (22 :: Runner.Hour) (26 :: Runner.Hour) $
             -- Catch all exceptions and log them as an error
             Runner.logSwallowExceptions $
                 connectFetchStore args

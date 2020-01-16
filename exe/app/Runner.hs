@@ -24,26 +24,36 @@ import qualified Control.Logging        as Log
 import qualified Data.Time.Clock        as C
 
 
+-- | Indicates whether to pause after running the action,
+--    or immediately run it again.
+data PauseAction
+    = Pause
+    | NoPause
+
 -- | Do something forever while pausing a random interval between.
 foreverWithPauseRange
-    :: forall minPause maxPause a.
+    :: forall minPause maxPause.
        ( TU.TimeUnit minPause
        , TU.TimeUnit maxPause
        , Show minPause
        )
     => minPause
     -> maxPause
-    -> IO a
+    -> IO PauseAction
     -> IO Void
 foreverWithPauseRange minPause maxPause action =
     forever $ do
-        _ <- action
-        pauseDuration <- TU.fromMicroseconds <$> Random.randomRIO
-            (TU.toMicroseconds minPause, TU.toMicroseconds maxPause)
-        durationEnd <- durationEndTime pauseDuration
-        logInfoS "RUNNER" $ "Pausing until " ++ show durationEnd
-        threadDelay (fromIntegral $ TU.toMicroseconds pauseDuration)
-        logInfoS "RUNNER" "Pause over"
+        pauseAction <- action
+        case pauseAction of
+            NoPause ->
+                logInfoS "RUNNER" "Not pausing (failure detected)"
+            Pause -> do
+                pauseDuration <- TU.fromMicroseconds <$> Random.randomRIO
+                    (TU.toMicroseconds minPause, TU.toMicroseconds maxPause)
+                durationEnd <- durationEndTime pauseDuration
+                logInfoS "RUNNER" $ "Pausing until " ++ show durationEnd
+                threadDelay (fromIntegral $ TU.toMicroseconds pauseDuration)
+                logInfoS "RUNNER" "Pause over"
   where
     logInfoS = Log.loggingLogger Log.LevelInfo
     addDuration :: C.UTCTime -> TU.Picosecond -> C.UTCTime
@@ -56,11 +66,16 @@ foreverWithPauseRange minPause maxPause action =
 
 -- | Run an IO action, and catch & log a thrown exception
 --    as an error.
+--   Returns 'NoPause' if an exception occurs, otherwise 'Pause'.
 logSwallowExceptions
     :: IO ()
-    -> IO ()
+    -> IO PauseAction
 logSwallowExceptions action =
-    action `catch` \someException ->
+    actionSuccess `catch` \someException -> do
         logErrorS "MAIN" (show (someException :: SomeException))
+        return NoPause
   where
     logErrorS = Log.loggingLogger Log.LevelError
+    actionSuccess = do
+        action
+        return Pause

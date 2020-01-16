@@ -16,8 +16,9 @@ where
 import           Data.Void              (Void)
 import           Control.Monad          (forever)
 import           Control.Concurrent     (threadDelay)
-import           Control.Exception      (catch, SomeException)
+import           Control.Exception      (SomeException)
 
+import qualified Control.Exception.Safe as ES
 import qualified Data.Time.Units        as TU
 import qualified System.Random          as Random
 import qualified Control.Logging        as Log
@@ -71,7 +72,7 @@ logSwallowExceptions
     :: IO ()
     -> IO PauseAction
 logSwallowExceptions action =
-    actionSuccess `catch` \someException -> do
+    actionSuccess `ES.catch` \someException -> do
         logErrorS "MAIN" (show (someException :: SomeException))
         return NoPause
   where

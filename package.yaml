@@ -70,6 +70,7 @@ executables:
     - text
     - bytestring
     - time
+    - safe-exceptions # Runner
     - time-units  # Schedule
     - random      # Schedule
     - retry       # PqConnection

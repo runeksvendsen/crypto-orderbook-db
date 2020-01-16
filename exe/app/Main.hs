@@ -39,10 +39,25 @@ import           Control.Error                          (lefts, rights)
 import           Control.Monad                          (forM, forM_, (<=<))
 import           Control.Monad.IO.Class                 (liftIO)
 import           Control.Exception                      (bracket)
-
+import qualified System.Random          as Random
+import           Control.Concurrent     (threadDelay)
 
 main :: IO Runner.Void
-main = Options.withArgs $ \args ->
+main = Options.withArgs $ \_ ->
+    withLogging $ do
+        Runner.foreverWithPauseRange
+            (1 :: Runner.Second) (5 :: Runner.Second)
+                (Runner.logSwallowExceptions $ do
+                    num <- Random.randomRIO (0, 1000)
+                    logInfoS "MAIN" "waiting..."
+                    threadDelay 4000000
+                    if (num :: Int) `mod` 5 /= 0
+                        then logInfoS "MAIN" $ "Success: " ++ show num
+                        else logInfoS "MAIN" ("Fail: " ++ show num) >> error "fail"
+                )
+
+main' :: IO Runner.Void
+main' = Options.withArgs $ \args ->
     withLogging $ do
         -- Log git version info
         logGitHash

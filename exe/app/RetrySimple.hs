@@ -52,7 +52,7 @@ doRetry
     -> IO Bool
 doRetry _                  (Right _)  = return False
 doRetry Re.RetryStatus{..} (Left err) = do
-    let retrying = AppMErr.shouldRetry err
+    let retrying = shouldRetry (AppMErr.toRetryAction err)
         retryStr = if retrying then "Retrying " else "Not retrying "
         attempt  = " (attempt " <> show' rsIterNumber <> ")"
         logFun = if retrying then Log.warnS else logErrorS
@@ -63,3 +63,7 @@ doRetry Re.RetryStatus{..} (Left err) = do
     show' = toS . show
     logErrorS :: T.Text -> T.Text -> IO ()
     logErrorS = Log.loggingLogger Log.LevelError
+    shouldRetry :: Re.RetryAction -> Bool
+    shouldRetry Re.DontRetry = False
+    shouldRetry Re.ConsultPolicy = True
+    shouldRetry (Re.ConsultPolicyOverrideDelay _) = True

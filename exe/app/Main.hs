@@ -82,14 +82,22 @@ withConnection args =
 --   fetch orderbooks,
 --   write orderbooks to database,
 --   close database connection.
-connectFetchStore :: Options.Options -> IO ()
+--
+--  If an error occurs for any venue nothing will be written
+--   to the database, and the return value will be 'Runner.NoPause'
+--   (indicating that we should retry immediately).
+--  Otherwise 'Runner.Pause' is returned.
+connectFetchStore :: Options.Options -> IO Runner.PauseAction
 connectFetchStore args = do
-    bookFetchRun <- fetchRun (Options.fetchMaxRetries args)
-    withConnection args $ \conn ->
-        -- Don't store empty run
-        if length (timeBookList bookFetchRun) > 0
-            then storeBooks conn bookFetchRun
-            else logInfoS "MAIN" "Not inserting empty run"
+    bookFetchRunM <- fetchRun (Options.fetchMaxRetries args)
+    maybe (return Runner.NoPause) connectSaveRun bookFetchRunM
+  where
+    connectSaveRun bookFetchRun =
+        withConnection args $ \conn ->
+            -- Don't store empty run
+            if length (timeBookList bookFetchRun) > 0
+                then storeBooks conn bookFetchRun >> return Runner.Pause
+                else logInfoS "MAIN" "Not inserting empty run"  >> return Runner.NoPause
 
 storeBooks :: Postgres.Connection -> BookRun -> IO ()
 storeBooks conn BookRun{..} = do
@@ -101,12 +109,16 @@ storeBooks conn BookRun{..} = do
 logInfoS :: T.Text -> String -> IO ()
 logInfoS = Log.loggingLogger Log.LevelInfo
 
-fetchRun :: Word -> IO BookRun
+-- Nothing = error
+fetchRun :: Word -> IO (Maybe BookRun)
 fetchRun maxRetries = do
     runStartTime <- Clock.getCurrentTime
-    timeBookList <- fetchBooks maxRetries
-    runEndTime <- Clock.getCurrentTime
-    return $ BookRun runStartTime timeBookList runEndTime
+    timeBookListM <- fetchBooks maxRetries
+    case timeBookListM of
+        Nothing -> return Nothing
+        Just timeBookList -> do
+            runEndTime <- Clock.getCurrentTime
+            return $ Just $ BookRun runStartTime timeBookList runEndTime
 
 data BookRun = BookRun
     { runStartTime  :: Clock.UTCTime
@@ -115,16 +127,20 @@ data BookRun = BookRun
     }
 
 -- TODO: error handling when running "EnumMarkets.marketList"
-fetchBooks :: Word -> IO [(Clock.UTCTime, SomeOrderBook)]
+-- Don't save books unless all venues succeed.
+fetchBooks :: Word -> IO (Maybe [(Clock.UTCTime, SomeOrderBook)])
 fetchBooks maxRetries = do
     man <- HTTP.newManager HTTPS.tlsManagerSettings
     booksE <- throwErrM $
         AppM.runAppM man maxRetries $ allBooks
     -- Log errors
-    forM_ (lefts booksE) logFetchError
-    -- NB: we sort the books so that the most frequently
+    let errors = lefts booksE
+    forM_ errors logFetchError
+    -- TODO: sort the books so that the most frequently
     --  occurring markets are fetched first
-    return . concat . sortMostFrequent . rights $ booksE
+    if null errors
+        then return . Just . concat . sortMostFrequent . rights $ booksE
+        else return Nothing
   where
     sortMostFrequent =
         Util.sortByOccurrenceCount (soVenue . snd) (soBaseQuote . snd)

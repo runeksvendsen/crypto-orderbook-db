@@ -3,6 +3,7 @@
 module Runner
 ( foreverWithPauseRange
 , logSwallowExceptions
+, PauseAction(..)
 -- * Re-exports
 , Void
 -- * Time units
@@ -69,14 +70,11 @@ foreverWithPauseRange minPause maxPause action =
 --    as an error.
 --   Returns 'NoPause' if an exception occurs, otherwise 'Pause'.
 logSwallowExceptions
-    :: IO ()
+    :: IO PauseAction
     -> IO PauseAction
 logSwallowExceptions action =
-    actionSuccess `ES.catch` \someException -> do
+    action `ES.catch` \someException -> do
         logErrorS "MAIN" (show (someException :: SomeException))
         return NoPause
   where
     logErrorS = Log.loggingLogger Log.LevelError
-    actionSuccess = do
-        action
-        return Pause

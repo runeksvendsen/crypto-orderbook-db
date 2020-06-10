@@ -1,0 +1,134 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 07d4e0147b478e32f84f2ccdca823a64ba9817f3642e0e1a7a8673b697e91fb2
+
+name:           crypto-orderbook-db
+version:        0.1.0.0
+category:       value
+homepage:       https://github.com/runeksvendsen/crypto-orderbook-db#readme
+author:         Rune K. Svendsen
+maintainer:     runesvend@gmail.com
+copyright:      CC0
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+library
+  exposed-modules:
+      CryptoDepth.OrderBook.Db.CreateTable
+      CryptoDepth.OrderBook.Db.Database
+      CryptoDepth.OrderBook.Db.Insert
+      CryptoDepth.OrderBook.Db.Monad
+      CryptoDepth.OrderBook.Db.Query
+      CryptoDepth.OrderBook.Db.Run.Assert
+      CryptoDepth.OrderBook.Db.Run.CreateTable
+      CryptoDepth.OrderBook.Db.Run.Migration
+      CryptoDepth.OrderBook.Db.Schema.Book
+      CryptoDepth.OrderBook.Db.Schema.Order
+      CryptoDepth.OrderBook.Db.Schema.Run
+      CryptoDepth.OrderBook.Db.Util
+  other-modules:
+      CryptoDepth.OrderBook.Db.Internal.Prelude
+  hs-source-dirs:
+      src
+  default-extensions: TypeFamilies StandaloneDeriving RecordWildCards FlexibleInstances DeriveGeneric MultiParamTypeClasses FlexibleContexts ScopedTypeVariables
+  ghc-options: -Wall -fno-warn-name-shadowing
+  build-depends:
+      base
+    , beam-core
+    , beam-migrate
+    , beam-postgres
+    , containers
+    , logging
+    , orderbook
+    , postgresql-simple
+    , postgresql-transactional
+    , pretty-simple
+    , protolude
+    , safe-money
+    , text
+    , time
+    , transformers
+    , vector
+  default-language: Haskell2010
+
+executable crypto-orderbook-db
+  main-is: Main.hs
+  other-modules:
+      Options
+      PqConnect
+      RetrySimple
+      Runner
+      Paths_crypto_orderbook_db
+  hs-source-dirs:
+      exe/app
+  default-extensions: TypeFamilies RecordWildCards
+  ghc-options: -Wall -fno-warn-name-shadowing
+  build-depends:
+      base
+    , beam-postgres
+    , bytestring
+    , crypto-orderbook-db
+    , crypto-venues
+    , errors
+    , githash
+    , http-client
+    , http-client-tls
+    , logging
+    , monad-parallel
+    , mtl
+    , optparse-applicative
+    , orderbook
+    , postgresql-transactional
+    , protolude
+    , random
+    , rate-limit
+    , retry
+    , safe-exceptions
+    , text
+    , time
+    , time-units
+  default-language: Haskell2010
+
+executable crypto-orderbook-db-create-tables
+  main-is: Main.hs
+  other-modules:
+      Paths_crypto_orderbook_db
+  hs-source-dirs:
+      exe/create-tables
+  default-extensions: TypeFamilies
+  ghc-options: -Wall -fno-warn-name-shadowing
+  build-depends:
+      base
+    , beam-migrate
+    , beam-postgres
+    , bytestring
+    , crypto-orderbook-db
+    , logging
+    , optparse-applicative
+  default-language: Haskell2010
+
+test-suite crypto-orderbook-db-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Spec.Util
+      Paths_crypto_orderbook_db
+  hs-source-dirs:
+      test
+  default-extensions: TypeFamilies
+  ghc-options: -Wall -fno-warn-name-shadowing -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base
+    , crypto-orderbook-db
+    , hspec
+    , hspec-expectations
+    , hspec-expectations-pretty-diff
+    , random-shuffle
+  default-language: Haskell2010

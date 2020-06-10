@@ -5,9 +5,6 @@
 
 packages:
 - completed:
-    cabal-file:
-      size: 2348
-      sha256: 3af51f98788b6439fff0f05fb57b5f1cab29d2b3993ca4ea7e9e9a71ef643f9b
     name: orderbook
     version: 0.1.0.0
     git: https://github.com/runeksvendsen/orderbook.git
@@ -18,20 +15,6 @@ packages:
   original:
     git: https://github.com/runeksvendsen/orderbook.git
     commit: 1cfe64aeb59ddebcfb0b8353f82457d16766fa36
-- completed:
-    cabal-file:
-      size: 4456
-      sha256: 5c7bbb0d99d76c3e08aa4b7658a1a705055cf1fd29a11368903192f9f5ed1d2d
-    name: crypto-venues
-    version: 0.3.0.0
-    git: https://github.com/runeksvendsen/crypto-venues.git
-    pantry-tree:
-      size: 2634
-      sha256: 8ededae4fc0e29883cecba4cdf0a585fa3ef7610f8e08aa7f01776e82e346e01
-    commit: ebf1fcbcee80bf71721cd581c2751476dffbbc45
-  original:
-    git: https://github.com/runeksvendsen/crypto-venues.git
-    commit: ebf1fcbcee80bf71721cd581c2751476dffbbc45
 - completed:
     hackage: logging-3.0.5@sha256:88096d3124fce9a19af3720f751e1a354d866ed5030d2e5197238d2277cdb2f2,2374
     pantry-tree:

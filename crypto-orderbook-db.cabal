@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 07d4e0147b478e32f84f2ccdca823a64ba9817f3642e0e1a7a8673b697e91fb2
+-- hash: 504982d2e2de9b5020b221621a62a67b32810d9f6619458ef6608c7b41917d85
 
 name:           crypto-orderbook-db
 version:        0.1.0.0
@@ -56,62 +56,6 @@ library
     , time
     , transformers
     , vector
-  default-language: Haskell2010
-
-executable crypto-orderbook-db
-  main-is: Main.hs
-  other-modules:
-      Options
-      PqConnect
-      RetrySimple
-      Runner
-      Paths_crypto_orderbook_db
-  hs-source-dirs:
-      exe/app
-  default-extensions: TypeFamilies RecordWildCards
-  ghc-options: -Wall -fno-warn-name-shadowing
-  build-depends:
-      base
-    , beam-postgres
-    , bytestring
-    , crypto-orderbook-db
-    , crypto-venues
-    , errors
-    , githash
-    , http-client
-    , http-client-tls
-    , logging
-    , monad-parallel
-    , mtl
-    , optparse-applicative
-    , orderbook
-    , postgresql-transactional
-    , protolude
-    , random
-    , rate-limit
-    , retry
-    , safe-exceptions
-    , text
-    , time
-    , time-units
-  default-language: Haskell2010
-
-executable crypto-orderbook-db-create-tables
-  main-is: Main.hs
-  other-modules:
-      Paths_crypto_orderbook_db
-  hs-source-dirs:
-      exe/create-tables
-  default-extensions: TypeFamilies
-  ghc-options: -Wall -fno-warn-name-shadowing
-  build-depends:
-      base
-    , beam-migrate
-    , beam-postgres
-    , bytestring
-    , crypto-orderbook-db
-    , logging
-    , optparse-applicative
   default-language: Haskell2010
 
 test-suite crypto-orderbook-db-test

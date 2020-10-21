@@ -32,36 +32,11 @@ mergeSamePrice
     -> [OB.Order base quote]
     -- ^ List of orders where same-priced orders have been merged
 mergeSamePrice =
-    combine tryMergeOrders
+    map mergeOrders . groupBy (\o1 o2 -> OB.oPrice o1 == OB.oPrice o2)
   where
-    mergeOrders order1 order2 = order1
-        { OB.oQuantity = OB.oQuantity order1 + OB.oQuantity order2 }
-    tryMergeOrders order1 order2 =
-        if OB.oPrice order1 == OB.oPrice order2
-            then Just (mergeOrders order1 order2)
-            else Nothing
-
--- | Combine adjacent list items.
---
---   Invariants:
---      "combine (const $ const Nothing) = id"
---      "combine (const $ const $ Just value) _ = [value]"
---      "combine f >>> groupBy (f >>> isJust) >>> all (length >>> (== 1)) = const True"
-combine
-    :: (a -> a -> Maybe a)
-    -- ^ If the two adjacent list items can be combined,
-    --  return 'Just' of an item that is the combination of the two items,
-    --  otherwise 'Nothing'.
-    -> [a]
-    -> [a]
-combine f =
-    reverse . foldl (\accum item -> combine' accum item) []
-  where
-    combine' [] item = [item]
-    combine' accumList@(newestItem : remainingItems) item =
-        case f newestItem item of
-            Just combinedA -> combinedA : remainingItems
-            Nothing        -> item : accumList
+    mergeOrders orderList =
+        let order1 = head orderList -- safe since 'groupBy' produces non-empty lists
+        in order1 { OB.oQuantity = sum $ map OB.oQuantity orderList }
 
 -- | Sort each sublist in a list so that the
 --    most frequently occurring items occur first in each sublist.

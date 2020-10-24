@@ -20,9 +20,9 @@ import qualified CryptoDepth.OrderBook.Db.Monad             as M
 import qualified OrderBook.Types                            as OB
 import qualified Database.Beam                              as Beam
 import qualified Data.Vector                                as Vec
+import qualified Data.List.NonEmpty                         as NE
 import Database.Beam.Backend.SQL.BeamExtensions             (runInsertReturningList)
 import Database.Beam.Postgres                               (SqlError(..), Pg)
-import Database.PostgreSQL.Simple                           (ExecStatus(FatalError))
 import qualified Money
 -- Debug
 import qualified UnliftIO.IORef as U
@@ -48,13 +48,13 @@ storeRun startTime endTime books = do
     dbTx `U.catch` handleSqlError bookRef
   where
     handleSqlError :: U.IORef SomeOrderBook -> SqlError -> M.Db a
-    handleSqlError bookRef sqlError@SqlError{sqlState = "23505", sqlExecStatus = FatalError} = do
-        -- "duplicate key value violates unique constraint"
+    handleSqlError bookRef sqlError = do
+        -- NB: SqlError{sqlState = "23505", sqlExecStatus = FatalError} = "duplicate key value violates unique constraint"
         book <- U.readIORef bookRef
-        M.logS M.LevelError "StoreRun" (toS $ showSomeOrderBook book)
+        let msg = "Error (" <> toS (show sqlError) <> ") when inserting book: " <> toS (showSomeOrderBook book)
+        M.logS M.LevelError "StoreRun" msg
             `U.catchAny` \(U.SomeException e) -> U.throwIO e
         U.throwIO sqlError
-    handleSqlError _ sqlError = U.throwIO sqlError
     showSomeOrderBook (SomeOrderBook ob) = OB.showBookUgly ob
 
 -- | Store an entire run as a transaction
@@ -114,6 +114,9 @@ storeBookPg runId time book = do
         Beam.runInsert
         . Beam.insert (DB.orders DB.orderBookDb)
         . Beam.insertValues
+        . Util.mergeOn Order.orderPrice mergeOrders
+    -- NB: we also merge here because (it is assumed that) two different
+    --  'Rational's may produce identical values when converted to 'Double'
     toOrder :: Bool -> Book.BookId -> OB.Order base quote -> Order.Order
     toOrder isBuy bookId order =
         Order.Order
@@ -122,6 +125,9 @@ storeBookPg runId time book = do
             , orderQty     = realToFrac . toRational . OB.oQuantity $ order
             , orderPrice   = realToFrac . Money.exchangeRateToRational . OB.oPrice $ order
             }
+    mergeOrders (_, orderList) =
+        let order1 = NE.head orderList
+        in order1 { Order.orderQty = sum $ NE.map Order.orderQty orderList }
 
 getSingleResult :: Show a => String -> [a] -> a
 getSingleResult identifier lst =

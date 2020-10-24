@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE OverloadedStrings #-}
 module CryptoDepth.OrderBook.Db.Insert
 ( M.Db
 , storeRun
@@ -20,8 +21,13 @@ import qualified OrderBook.Types                            as OB
 import qualified Database.Beam                              as Beam
 import qualified Data.Vector                                as Vec
 import Database.Beam.Backend.SQL.BeamExtensions             (runInsertReturningList)
-import Database.Beam.Postgres                               (Pg)
+import Database.Beam.Postgres                               (SqlError(..), Pg)
+import Database.PostgreSQL.Simple                           (ExecStatus(FatalError))
 import qualified Money
+-- Debug
+import qualified UnliftIO.IORef as U
+import qualified UnliftIO.Exception as U
+
 
 
 data SomeOrderBook = forall venue base quote.
@@ -36,7 +42,29 @@ storeRun
     -> Book.UTCTime                         -- ^ Run end time
     -> [(Book.UTCTime, SomeOrderBook)]      -- ^ Books & fetch times
     -> M.Db (Run.RunId, [Book.BookId])
-storeRun startTime endTime books = (M.runTx <=< M.asTx) $ do
+storeRun startTime endTime books = do
+    bookRef <- U.newIORef (error "empty IORef")
+    let dbTx = (M.runTx <=< M.asTx) $ storeRun' startTime endTime books bookRef
+    dbTx `U.catch` handleSqlError bookRef
+  where
+    handleSqlError :: U.IORef SomeOrderBook -> SqlError -> M.Db a
+    handleSqlError bookRef sqlError@SqlError{sqlState = "23505", sqlExecStatus = FatalError} = do
+        -- "duplicate key value violates unique constraint"
+        book <- U.readIORef bookRef
+        M.logS M.LevelError "StoreRun" (toS $ showSomeOrderBook book)
+            `U.catchAny` \(U.SomeException e) -> U.throwIO e
+        U.throwIO sqlError
+    handleSqlError _ sqlError = U.throwIO sqlError
+    showSomeOrderBook (SomeOrderBook ob) = OB.showBookUgly ob
+
+-- | Store an entire run as a transaction
+storeRun'
+    :: Book.UTCTime                         -- ^ Run start time
+    -> Book.UTCTime                         -- ^ Run end time
+    -> [(Book.UTCTime, SomeOrderBook)]      -- ^ Books & fetch times
+    -> U.IORef SomeOrderBook
+    -> Pg (Run.RunId, [Book.BookId])
+storeRun' startTime endTime books bookRef = do
     runId <- insertRunReturningId $ Beam.insertExpressions
         [ Run.Run
             { runId         = Beam.default_
@@ -44,7 +72,8 @@ storeRun startTime endTime books = (M.runTx <=< M.asTx) $ do
             , runTimeEnd    = Beam.val_ endTime
             }
         ]
-    bookIdList <- forM books $ \(time, SomeOrderBook book) -> do
+    bookIdList <- forM books $ \(time, sob@(SomeOrderBook book)) -> do
+        U.writeIORef bookRef sob
         -- NB: merging same-priced orders is important since the order primary key depends
         --  on two same-priced orders not existing in the same order book
         storeBookPg runId time (Util.mergeSamePricedOrders book)

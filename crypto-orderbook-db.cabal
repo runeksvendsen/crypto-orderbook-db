@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 504982d2e2de9b5020b221621a62a67b32810d9f6619458ef6608c7b41917d85
+-- hash: f3d273d5e41ae7c0b80abfed1e70e98cccdbc204bc97859e2bda11197b14c7c7
 
 name:           crypto-orderbook-db
 version:        0.1.0.0
@@ -55,6 +55,8 @@ library
     , text
     , time
     , transformers
+    , unliftio
+    , unliftio-core
     , vector
   default-language: Haskell2010
 

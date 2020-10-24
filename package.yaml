@@ -41,6 +41,8 @@ library:
   - logging
   - pretty-simple
   - containers  # Util
+  - unliftio-core
+  - unliftio
   default-extensions:
   - StandaloneDeriving
   - RecordWildCards

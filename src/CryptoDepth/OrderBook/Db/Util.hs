@@ -1,6 +1,7 @@
 module CryptoDepth.OrderBook.Db.Util
 ( mergeSamePricedOrders
 , sortByOccurrenceCount
+, mergeOn
 )
 where
 
@@ -9,6 +10,7 @@ import           GHC.Exts                           (IsList(..))
 import           Data.List                          (groupBy, sortOn)
 import           Data.Ord                           (Down(Down))
 import qualified Data.Map.Strict                    as Map
+import qualified Data.List.NonEmpty                 as NE
 
 
 -- | Merge same-priced orders
@@ -32,11 +34,29 @@ mergeSamePrice
     -> [OB.Order base quote]
     -- ^ List of orders where same-priced orders have been merged
 mergeSamePrice =
-    map mergeOrders . groupBy (\o1 o2 -> OB.oPrice o1 == OB.oPrice o2)
+    mergeOn OB.oPrice mergeOrders
   where
-    mergeOrders orderList =
-        let order1 = head orderList -- safe since 'groupBy' produces non-empty lists
-        in order1 { OB.oQuantity = sum $ map OB.oQuantity orderList }
+    mergeOrders (_, orderList) =
+        let order1 = NE.head orderList
+        in order1 { OB.oQuantity = sum $ NE.map OB.oQuantity orderList }
+
+-- | @mergeOn f merge lst@ merges all items in @lst@ for which @f item1 == f item2@
+--    using the @merge@ function.
+--
+-- Example:
+-- >>> let input = [("a", 1), ("b", 3), ("a", 2), ("c", 1), ("b", 6), ("a", 8)]
+-- >>> mergeOn fst (fmap (sum . Data.List.NonEmpty.map snd)) input
+-- [("a",11),("b",9),("c",1)]
+mergeOn
+    :: Ord b
+    => (a -> b)
+    -> ((b, NE.NonEmpty a) -> a)
+    -> [a]
+    -> [a]
+mergeOn f merge =
+    map merge . map pairUp . groupBy (\a b -> f a == f b) . sortOn f
+  where
+    pairUp lst = (f $ head lst, NE.fromList lst)
 
 -- | Sort each sublist in a list so that the
 --    most frequently occurring items occur first in each sublist.

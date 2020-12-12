@@ -35,6 +35,7 @@ deriving instance Eq Run
 instance Show RunId where
     show (RunId serial) = "RunId " ++ show (unSerial serial)
 deriving instance Eq RunId
+deriving instance Ord RunId
 
 instance Beam.Beamable RunT
 

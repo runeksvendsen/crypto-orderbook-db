@@ -3,13 +3,20 @@ module CryptoDepth.OrderBook.Db.Query
 ( buySellPriceRange
 , volumeBaseQuote
 , bookOrders
+, runBooks
+, OB(..)
+, Order
 )
 where
 
+import CryptoDepth.OrderBook.Db.Internal.Prelude
 import qualified CryptoDepth.OrderBook.Db.Schema.Order  as Order
+import qualified CryptoDepth.OrderBook.Db.Schema.Book as Book
 import qualified CryptoDepth.OrderBook.Db.Database               as DB
 
 import Database.Beam.Query
+import Data.List (partition, sortOn, groupBy)
+import qualified Data.Vector as Vec
 
 
 -- | Total volume of sell orders and buy orders, respectively,
@@ -60,3 +67,34 @@ bookOrders bookId = do
     order <- all_ (DB.orders DB.orderBookDb)
     guard_ (Order.orderBook order `references_` bookId)
     return order
+
+-- | (order, (venue, (base, quote)))
+runOrders runId = do
+    book <- all_ (DB.books DB.orderBookDb)
+    guard_ $ Book.bookRun book ==. val_ runId
+    order <- bookOrders book
+    return (order, (Book.bookVenue book, (Book.bookBase book, Book.bookQuote book)))
+
+runBooks runId = do
+    orders <- runSelectReturningList $ select (runOrders runId)
+    let groupedOrders = map (\lst -> (map fst lst, snd $ head lst) ) $ groupOn snd orders
+    return $ map fromGroupedOrders groupedOrders
+  where
+    groupOn f = groupBy (\a1 a2 -> f a1 == f a2) . sortOn f
+    fromOrder order = (Order.orderPrice order, Order.orderQty order)
+    fromGroupedOrders :: ([Order.Order], (Text, (Text, Text))) -> OB
+    fromGroupedOrders (orderList, (venue, (base, quote))) =
+        let (buy, sell) = partition Order.orderIsBuy orderList
+        in OB venue base quote (Vec.fromList $ map fromOrder buy) (Vec.fromList $ map fromOrder sell)
+
+-- | (price, qty)
+type Order = (Double, Double)
+
+-- |
+data OB = OB
+    { obVenue :: Text
+    , obBase :: Text
+    , obQuote :: Text
+    , obBuyOrders :: Vec.Vector Order
+    , obSellOrders :: Vec.Vector Order
+    }

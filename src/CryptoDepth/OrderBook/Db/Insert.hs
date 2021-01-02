@@ -43,17 +43,19 @@ storeRun
     -> [(Book.UTCTime, SomeOrderBook)]      -- ^ Books & fetch times
     -> M.Db (Run.RunId, [Book.BookId])
 storeRun startTime endTime books = do
-    bookRef <- U.newIORef (error "empty IORef")
+    bookRef <- U.newIORef Nothing
     let dbTx = (M.runTx <=< M.asTx) $ storeRun' startTime endTime books bookRef
     dbTx `U.catch` handleSqlError bookRef
   where
-    handleSqlError :: U.IORef SomeOrderBook -> SqlError -> M.Db a
+    handleSqlError :: U.IORef (Maybe SomeOrderBook) -> SqlError -> M.Db a
     handleSqlError bookRef sqlError = do
         -- NB: SqlError{sqlState = "23505", sqlExecStatus = FatalError} = "duplicate key value violates unique constraint"
-        book <- U.readIORef bookRef
-        let msg = "Error (" <> toS (show sqlError) <> ") when inserting book: " <> toS (showSomeOrderBook book)
-        M.logS M.LevelError "StoreRun" msg
-            `U.catchAny` \(U.SomeException e) -> U.throwIO e
+        bookM <- U.readIORef bookRef
+        -- maybe print orderbook-specific error message
+        forM_ bookM $ \book -> do
+            let msg = "Error (" <> toS (show sqlError) <> ") when inserting book: " <> toS (showSomeOrderBook book)
+            M.logS M.LevelError "StoreRun" msg
+                `U.catchAny` \(U.SomeException e) -> U.throwIO e
         U.throwIO sqlError
     showSomeOrderBook (SomeOrderBook ob) = OB.showBookUgly ob
 
@@ -62,7 +64,7 @@ storeRun'
     :: Book.UTCTime                         -- ^ Run start time
     -> Book.UTCTime                         -- ^ Run end time
     -> [(Book.UTCTime, SomeOrderBook)]      -- ^ Books & fetch times
-    -> U.IORef SomeOrderBook
+    -> U.IORef (Maybe SomeOrderBook)
     -> Pg (Run.RunId, [Book.BookId])
 storeRun' startTime endTime books bookRef = do
     runId <- insertRunReturningId $ Beam.insertExpressions
@@ -73,7 +75,7 @@ storeRun' startTime endTime books bookRef = do
             }
         ]
     bookIdList <- forM books $ \(time, sob@(SomeOrderBook book)) -> do
-        U.writeIORef bookRef sob
+        U.writeIORef bookRef (Just sob)
         -- NB: merging same-priced orders is important since the order primary key depends
         --  on two same-priced orders not existing in the same order book
         storeBookPg runId time (Util.mergeSamePricedOrders book)

@@ -5,7 +5,7 @@ module CryptoDepth.OrderBook.Db.Schema.Run
 , PrimaryKey(type RunId)
   -- * Re-exports
 , UTCTime
-, Word32
+, Int32
 )
 where
 
@@ -15,14 +15,14 @@ import qualified Database.Beam              as Beam
 import           Database.Beam              (C, Identity, PrimaryKey)
 import Data.Time.Clock                      (UTCTime)
 import Database.Beam.Backend.SQL.Types      (SqlSerial(unSerial))
-import Data.Word                            (Word32)
+import Data.Int                            (Int32)
 
 
 -- | A time span within which a collection of order books
 --    were fetched.
 data RunT f
     = Run
-    { runId         :: C f (SqlSerial Word32)
+    { runId         :: C f (SqlSerial Int32)
     , runTimeStart  :: C f UTCTime
     , runTimeEnd    :: C f UTCTime
     } deriving Generic
@@ -41,7 +41,7 @@ instance Beam.Beamable RunT
 
 instance Beam.Table RunT where
     data PrimaryKey RunT f = RunId
-        (C f (SqlSerial Word32))
+        (C f (SqlSerial Int32))
             deriving Generic
     primaryKey = RunId . runId
 

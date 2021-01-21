@@ -6,7 +6,7 @@ module CryptoDepth.OrderBook.Db.Schema.Book
   -- * Re-exports
 , LocalTime
 , UTCTime
-, Word32
+, Int32
 )
 where
 
@@ -18,7 +18,7 @@ import           Database.Beam              (C, Identity, PrimaryKey)
 import Data.Time.Clock                      (UTCTime)
 import Data.Time.LocalTime                  (LocalTime)
 import Database.Beam.Backend.SQL.Types      (SqlSerial)
-import Data.Word                            (Word32)
+import Data.Int                            (Int32)
 
 
 -- | Order book.
@@ -26,7 +26,7 @@ import Data.Word                            (Word32)
 --   Therefore, merge same-priced orders into one before inserting.
 data BookT f
     = Book
-    { bookId       :: C f (SqlSerial Word32)
+    { bookId       :: C f (SqlSerial Int32)
     , bookRun      :: PrimaryKey Run.RunT f
     , bookTime     :: C f UTCTime
     , bookVenue    :: C f Text
@@ -46,7 +46,7 @@ instance Beam.Beamable BookT
 
 instance Beam.Table BookT where
     data PrimaryKey BookT f = BookId
-        (C f (SqlSerial Word32))
+        (C f (SqlSerial Int32))
             deriving Generic
     primaryKey = BookId . bookId
 

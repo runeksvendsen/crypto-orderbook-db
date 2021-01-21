@@ -1,6 +1,6 @@
 module CryptoDepth.OrderBook.Db.Internal.Prelude
 ( T.Text
-, Word32
+, Int32
 , Generic
 , logErrorS
 , module ProtoString
@@ -13,7 +13,7 @@ module CryptoDepth.OrderBook.Db.Internal.Prelude
 )
 where
 
-import Data.Word (Word32)
+import Data.Int (Int32)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Protolude.Conv as ProtoString (toS, StringConv)

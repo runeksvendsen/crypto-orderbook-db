@@ -24,6 +24,6 @@ orderBookDb :: Beam.DatabaseSettings be OrderBookDb
 orderBookDb = Beam.defaultDbSettings
 
 bookOrders
-    :: Beam.HasSqlEqualityCheck be Book.Word32
+    :: Beam.HasSqlEqualityCheck be Book.Int32
     => Beam.OneToMany be OrderBookDb s Book.BookT Order.OrderT
 bookOrders = Beam.oneToMany_ (orders orderBookDb) Order.orderBook

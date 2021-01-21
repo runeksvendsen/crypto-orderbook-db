@@ -2,7 +2,7 @@
 module CryptoDepth.OrderBook.Db.Query
 ( buySellPriceRange
 , volumeBaseQuote
-, bookOrders
+, DB.bookOrders
 , runBooks
 , OB(..)
 , Order
@@ -15,6 +15,7 @@ import qualified CryptoDepth.OrderBook.Db.Schema.Book as Book
 import qualified CryptoDepth.OrderBook.Db.Database               as DB
 
 import Database.Beam.Query
+import Database.Beam (pk)
 import Data.List (partition, sortOn, groupBy)
 import qualified Data.Vector as Vec
 
@@ -23,7 +24,7 @@ import qualified Data.Vector as Vec
 --    measured in both base currency and quote currency.
 --   Output: (base_volume, quote_volume)
 volumeBaseQuote bookId =
-    aggregate_ groupAndSum (bookOrders bookId)
+    aggregate_ groupAndSum (DB.bookOrders bookId)
   where
     groupAndSum orders =
         ( ( group_ $ Order.orderBook orders
@@ -59,20 +60,15 @@ firstOrderSortedBy bookId isBuyOrder ordering =
     limit_ 1 $
     orderBy_ (ordering . Order.orderPrice) $
     filterIsBuyOrder $
-    bookOrders bookId
+    DB.bookOrders bookId
   where
     filterIsBuyOrder = filter_ (\o -> Order.orderIsBuy o ==. val_ isBuyOrder)
 
-bookOrders bookId = do
-    order <- all_ (DB.orders DB.orderBookDb)
-    guard_ (Order.orderBook order `references_` bookId)
-    return order
-
--- | (order, (venue, (base, quote)))
 runOrders runId = do
-    book <- all_ (DB.books DB.orderBookDb)
-    guard_ $ Book.bookRun book ==. val_ runId
-    order <- bookOrders book
+    run <- all_ (DB.runs DB.orderBookDb)
+    guard_ $ pk run ==. val_ runId
+    book <- DB.runBooks run
+    order <- DB.bookOrders book
     return (order, (Book.bookVenue book, (Book.bookBase book, Book.bookQuote book)))
 
 runBooks runId = do

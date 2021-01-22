@@ -15,7 +15,6 @@ import qualified CryptoDepth.OrderBook.Db.Schema.Book as Book
 import qualified CryptoDepth.OrderBook.Db.Database               as DB
 
 import Database.Beam.Query
-import Database.Beam (pk)
 import Data.List (partition, sortOn, groupBy)
 import qualified Data.Vector as Vec
 
@@ -65,9 +64,8 @@ firstOrderSortedBy bookId isBuyOrder ordering =
     filterIsBuyOrder = filter_ (\o -> Order.orderIsBuy o ==. val_ isBuyOrder)
 
 runOrders runId = do
-    run <- all_ (DB.runs DB.orderBookDb)
-    guard_ $ pk run ==. val_ runId
-    book <- DB.runBooks run
+    book <- all_ (DB.books DB.orderBookDb)
+    guard_ $ Book.bookRun book ==. val_ runId
     order <- DB.bookOrders book
     return (order, (Book.bookVenue book, (Book.bookBase book, Book.bookQuote book)))
 

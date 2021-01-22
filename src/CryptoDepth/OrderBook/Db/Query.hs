@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# LANGUAGE StrictData #-}
 module CryptoDepth.OrderBook.Db.Query
 ( buySellPriceRange
 , volumeBaseQuote

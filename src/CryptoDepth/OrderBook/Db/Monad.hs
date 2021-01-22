@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StrictData #-}
 module CryptoDepth.OrderBook.Db.Monad
 ( Db
 , runDb

@@ -16,8 +16,8 @@ import qualified CryptoDepth.OrderBook.Db.Schema.Book as Book
 import qualified CryptoDepth.OrderBook.Db.Database               as DB
 
 import Database.Beam.Query
-import Data.List (partition, sortOn, groupBy)
 import qualified Data.Vector as Vec
+import qualified Database.Beam.Postgres as Pg
 
 
 -- | Total volume of sell orders and buy orders, respectively,
@@ -67,20 +67,28 @@ firstOrderSortedBy bookId isBuyOrder ordering =
 runOrders runId = do
     book <- all_ (DB.books DB.orderBookDb)
     guard_ $ Book.bookRun book ==. val_ runId
-    order <- DB.bookOrders book
-    return (order, (Book.bookVenue book, (Book.bookBase book, Book.bookQuote book)))
+    return ( ( orderVector book True
+             , orderVector book False
+             )
+           , ( Book.bookVenue book
+             , ( Book.bookBase book
+               , Book.bookQuote book
+               )
+             )
+           )
+  where
+    orders book isBuy = filter_ (\o -> Order.orderIsBuy o ==. val_ isBuy) (DB.bookOrders book)
+    orderVector book isBuy = Pg.arrayOf_ $
+          (\o -> Pg.array_ (Order.orderPrice o, Order.orderQty o)) <$> orders book isBuy
 
 runBooks runId = do
     orders <- runSelectReturningList $ select (runOrders runId)
-    let groupedOrders = map (\lst -> (map fst lst, snd $ head lst) ) $ groupOn snd orders
-    return $ map fromGroupedOrders groupedOrders
+    return $ map fromGroupedOrders orders
   where
-    groupOn f = groupBy (\a1 a2 -> f a1 == f a2) . sortOn f
-    fromOrder order = (Order.orderPrice order, Order.orderQty order)
-    fromGroupedOrders :: ([Order.Order], (Text, (Text, Text))) -> OB
-    fromGroupedOrders (orderList, (venue, (base, quote))) =
-        let (buy, sell) = partition Order.orderIsBuy orderList
-        in OB venue base quote (Vec.fromList $ map fromOrder buy) (Vec.fromList $ map fromOrder sell)
+    fromOrder orderVec = (orderVec Vec.! 0, orderVec Vec.! 1)
+    fromGroupedOrders :: ((Vec.Vector (Vec.Vector Double), Vec.Vector (Vec.Vector Double)), (Text, (Text, Text))) -> OB
+    fromGroupedOrders ((buy, sell), (venue, (base, quote))) =
+        OB venue base quote (Vec.map fromOrder buy) (Vec.map fromOrder sell)
 
 -- | (price, qty)
 type Order = (Double, Double)

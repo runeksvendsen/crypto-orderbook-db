@@ -79,7 +79,7 @@ runOrders runId = do
   where
     orders book isBuy = filter_ (\o -> Order.orderIsBuy o ==. val_ isBuy) (DB.bookOrders book)
     orderVector book isBuy = Pg.arrayOf_ $
-          (\o -> Pg.array_ (Order.orderPrice o, Order.orderQty o)) <$> orders book isBuy
+          (\o -> Pg.array_ [Order.orderPrice o, Order.orderQty o]) <$> orders book isBuy
 
 runBooks runId = do
     orders <- runSelectReturningList $ select (runOrders runId)

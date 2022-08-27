@@ -5,6 +5,7 @@ module CryptoDepth.OrderBook.Db.Query
 , volumeBaseQuote
 , DB.bookOrders
 , runBooks
+, runBook
 , OB(..)
 , Order
 )
@@ -14,6 +15,7 @@ import CryptoDepth.OrderBook.Db.Internal.Prelude
 import qualified CryptoDepth.OrderBook.Db.Schema.Order  as Order
 import qualified CryptoDepth.OrderBook.Db.Schema.Book as Book
 import qualified CryptoDepth.OrderBook.Db.Database               as DB
+import qualified CryptoDepth.OrderBook.Db.Schema.Run as Run
 
 import Database.Beam.Query
 import qualified Data.Vector as Vec
@@ -64,6 +66,20 @@ firstOrderSortedBy bookId isBuyOrder ordering =
   where
     filterIsBuyOrder = filter_ (\o -> Order.orderIsBuy o ==. val_ isBuyOrder)
 
+type RunOrdersExpr ctx1 ctx2 s =
+  ( (QGenExpr ctx1 Pg.Postgres s (Vec.Vector (Vec.Vector Double)),
+        QGenExpr ctx2 Pg.Postgres s (Vec.Vector (Vec.Vector Double)))
+  , (QExpr Pg.Postgres s Text,
+        (QExpr Pg.Postgres s Text,
+          QExpr Pg.Postgres s Text))
+  )
+
+runOrders
+  :: Run.RunId
+  -> Q Pg.Postgres
+      DB.OrderBookDb
+      s
+      (RunOrdersExpr ctx1 ctx2 s)
 runOrders runId = do
     book <- all_ (DB.books DB.orderBookDb)
     guard_ $ Book.bookRun book ==. val_ runId
@@ -81,14 +97,46 @@ runOrders runId = do
     orderVector book isBuy = Pg.arrayOf_ $
           (\o -> Pg.array_ [Order.orderPrice o, Order.orderQty o]) <$> orders book isBuy
 
-runBooks runId = do
-    orders <- runSelectReturningList $ select (runOrders runId)
+runBooks :: Run.RunId -> Pg.Pg [OB]
+runBooks = runBooks' (const $ pure ())
+
+runBooks'
+  :: (RunOrdersExpr ctx1 ctx2 QBaseScope -> Q Pg.Postgres DB.OrderBookDb QBaseScope ())
+  -> Run.RunId -> Pg.Pg [OB]
+runBooks' guard runId = do
+    orders <- runSelectReturningList $ select $ do
+      book <- runOrders runId
+      guard book
+      pure book
     return $ map fromGroupedOrders orders
   where
     fromOrder orderVec = (orderVec Vec.! 0, orderVec Vec.! 1)
     fromGroupedOrders :: ((Vec.Vector (Vec.Vector Double), Vec.Vector (Vec.Vector Double)), (Text, (Text, Text))) -> OB
     fromGroupedOrders ((buy, sell), (venue, (base, quote))) =
         OB venue base quote (Vec.map fromOrder buy) (Vec.map fromOrder sell)
+
+-- | Get one orderbook for a particular run and venue
+--   for two known currencies without knowing which currency is 'base' and which is 'quote'.
+--
+--   Note that we expect our orderbook database to contain exactly one orderbook for a given
+--   (runId, venue, currencyPair) -- ie. we expect our DB to _not_ contain an orderbook
+--   for both (base=X, quote=Y) AND (base=Y, quote=X).
+--
+--   This enables us to retrieve an orderbook from a path through a graph, where we no longer
+--   know which is the base currency and which is the quote currency.
+runBook
+  :: Text -- ^ Venue
+  -> Text -- ^ currency1: either base or quote
+  -> Text -- ^ currency2: @if currency1 is base then quote else base@
+  -> Run.RunId
+  -> Pg.Pg [OB]
+runBook venue bookCurrency1 bookCurrency2 =
+    runBooks' guard
+  where
+    guard (_, (venue', (base, quote))) = guard_ $
+          venue' ==. val_ venue &&.
+      (   (base ==. val_ bookCurrency1 &&. quote ==. val_ bookCurrency2)
+      ||. (quote ==. val_ bookCurrency1 &&. base ==. val_ bookCurrency2))
 
 -- | (price, qty)
 type Order = (Double, Double)

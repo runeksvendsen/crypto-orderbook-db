@@ -1,10 +1,2 @@
-    cradle:
-      stack:
-        - path: "./src"
-          component: "crypto-orderbook-db:lib"
-        - path: "./exe/app"
-          component: "crypto-orderbook-db:exe:crypto-orderbook-db"
-        - path: "./exe/create-tables"
-          component: "crypto-orderbook-db:exe:crypto-orderbook-db-create-tables"
-        - path: "./test"
-          component: "crypto-orderbook-db:test:crypto-orderbook-db-test"
+cradle:
+  cabal:

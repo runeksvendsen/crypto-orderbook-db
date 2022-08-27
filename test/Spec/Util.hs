@@ -7,7 +7,6 @@ import qualified CryptoDepth.OrderBook.Db.Util              as Util
 
 import qualified Test.Hspec                                 as Hspec
 import qualified Test.Hspec.Expectations                    as Expect
-import qualified Test.Hspec.Expectations.Pretty             as Pretty
 import qualified System.Random.Shuffle                      as Shuffle
 
 

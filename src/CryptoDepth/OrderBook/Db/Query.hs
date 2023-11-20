@@ -6,6 +6,7 @@ module CryptoDepth.OrderBook.Db.Query
 , DB.bookOrders
 , runBooks
 , runBook
+, newestRun
 , OB(..)
 , Order
 )
@@ -21,6 +22,23 @@ import Database.Beam.Query
 import qualified Data.Vector as Vec
 import qualified Database.Beam.Postgres as Pg
 
+-- | Return the most recent run.
+--
+--   If there are no runs at all then 'Nothing' is returned.
+newestRun
+  :: Pg.Pg (Maybe Run.Run)
+newestRun =
+    runSelectReturningOne $ select newestRunQ
+  where
+    newestRunQ
+        :: Q Pg.Postgres DB.OrderBookDb s (Run.RunT (QExpr Pg.Postgres s))
+    newestRunQ = do
+        maxRunId <- aggregate_
+          max_
+          (Run.runId <$> all_ (DB.runs DB.orderBookDb))
+        filter_
+          (\run -> just_ (Run.runId run) ==. maxRunId)
+          (all_ $ DB.runs DB.orderBookDb)
 
 -- | Total volume of sell orders and buy orders, respectively,
 --    measured in both base currency and quote currency.
